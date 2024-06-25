@@ -79,13 +79,14 @@
 //   );
 // }
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useFormik } from "formik";
 import * as yup from "yup";
 import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import { Grid, Container, Typography } from "@mui/material";
 import authFetch from "../Custom";
+import Contact from "./Contact";
 
 const validationSchema = yup.object({
   email: yup
@@ -101,7 +102,19 @@ const validationSchema = yup.object({
     .required("Module ID is required"),
 });
 
-export default function ContactForm() {
+export default function ContactForm(props) {
+  const { toggleDrawer, id, setId } = props;
+
+  useEffect(() => {
+    if (id.length > 0) {
+      authFetch.get(`/contact/view/${id}`).then((y) => {
+        console.log(y.data);
+        formik.setFieldValue("email", y.data.contact.email);
+
+        formik.setFieldValue("phoneNumber", y.data.contact.phoneNumber);
+      });
+    }
+  }, [id]);
   const formik = useFormik({
     initialValues: {
       email: "",
@@ -109,10 +122,20 @@ export default function ContactForm() {
       moduleId: "666684a4cdcc241d9806bf4b",
     },
     validationSchema: validationSchema,
+
     onSubmit: (values) => {
-      authFetch.post("/form/add", values).then((response) => {
-        console.log(response.data);
-      });
+      if (id === 0) {
+        authFetch.post("/form/add", values).then((response) => {
+          console.log(response.data);
+          toggleDrawer();
+        });
+      } else {
+        authFetch.put(`/form/edit/${id}`, values).then((y) => {
+          console.log(y.data);
+
+          toggleDrawer();
+        });
+      }
     },
   });
 
